@@ -1,0 +1,114 @@
+%{
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+void yyerror(const char *s);
+int yylex();
+
+typedef union {
+    int intval;
+    char charval;
+    char *strval;
+} YYSTYPE;
+
+#define YYSTYPE YYSTYPE
+%}
+
+%union {
+    int intval;
+    char charval;
+    char *strval;
+}
+
+%token <intval> IntConst
+%token <charval> CharConst
+%token <strval> StringConst
+%token <strval> IDENTIFIER
+%token INT MAIN CHAR STRUCT IF ELSE WHILE READ WRITE
+%token ASSIGN SEMICOLON COLON LPAREN RPAREN LBRACE RBRACE
+%token ADDOP MULOP RELOP
+
+%%
+Program: INT MAIN LPAREN RPAREN LBRACE DeclList StmtList RBRACE
+        { printf("Program syntactic correct\n"); }
+    ;
+
+DeclList: Declaration SEMICOLON DeclList
+        | /* empty */
+    ;
+
+Declaration: IDENTIFIER COLON Type
+    ;
+
+Type: INT
+    | CHAR
+    | StructDecl
+    ;
+
+StructDecl: STRUCT IDENTIFIER LBRACE DeclList RBRACE
+    ;
+
+StmtList: Stmt SEMICOLON StmtList
+        | /* empty */
+    ;
+
+Stmt: SimplStmt
+    | StructStmt
+    ;
+
+SimplStmt: AssignStmt
+         | IOStmt
+    ;
+
+AssignStmt: IDENTIFIER ASSIGN Expression
+    ;
+
+Expression: Expression ADDOP Term
+          | Term
+    ;
+
+Term: Term MULOP Factor
+    | Factor
+    ;
+
+Factor: LPAREN Expression RPAREN
+      | IDENTIFIER
+      | IntConst
+      | CharConst
+    ;
+
+IOStmt: READ LPAREN IDENTIFIER RPAREN SEMICOLON
+      | WRITE LPAREN OutputContent RPAREN SEMICOLON
+    ;
+
+OutputContent: IDENTIFIER
+             | StringConst
+    ;
+
+StructStmt: CmpdStmt
+          | IfStmt
+          | WhileStmt
+    ;
+
+CmpdStmt: LBRACE StmtList RBRACE
+    ;
+
+IfStmt: IF LPAREN Condition RPAREN Stmt
+      | IF LPAREN Condition RPAREN Stmt ELSE Stmt
+    ;
+
+Condition: Expression RELOP Expression
+    ;
+
+WhileStmt: WHILE LPAREN Condition RPAREN Stmt
+    ;
+%%
+void yyerror(const char *s) {
+    printf("Error: %s\n", s);
+}
+
+int main() {
+    yyparse();
+    return 0;
+}
